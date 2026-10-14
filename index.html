@@ -138,10 +138,10 @@
     .ui-interactive { pointer-events: auto; }
 
     @keyframes pulse-red {
-      0%, 100% { background: rgba(255, 51, 68, 0.2); border-color: #ff3344; box-shadow: 0 0 20px rgba(255,51,68,0.4); }
-      50% { background: rgba(255, 51, 68, 0.7); border-color: #ffffff; box-shadow: 0 0 35px rgba(255,51,68,0.9); color: #fff; }
+      0%, 100% { background: rgba(255, 51, 68, 0.25); border-color: #ff3344; box-shadow: 0 0 20px rgba(255,51,68,0.5); }
+      50% { background: rgba(255, 51, 68, 0.85); border-color: #ffffff; box-shadow: 0 0 40px rgba(255,51,68,1.0); color: #fff; }
     }
-    .missile-strobe { animation: pulse-red 0.3s infinite alternate; }
+    .missile-strobe { animation: pulse-red 0.25s infinite alternate; }
 
     @keyframes boss-pulse {
       0%, 100% { border-color: #ff0055; box-shadow: 0 0 15px rgba(255,0,85,0.4); }
@@ -307,10 +307,13 @@
         </span>
       </div>
 
-      <!-- Center Alert: Missile Warning or Stall Warning -->
+      <!-- Center Alert: Incoming Homing Missile Siren & Alerts -->
       <div class="flex flex-col items-center gap-1.5">
-        <div id="missile-alert" class="hidden glass-panel missile-strobe px-5 py-2 rounded text-xs font-hud font-black tracking-widest text-white border-2 border-[#ff3344]">
-          ⚠ MISSILE LOCK DETECTED // PRESS [Q] COBRA MANEUVER OR [F] FLARES!
+        <div id="missile-alert" class="hidden glass-panel missile-strobe px-5 py-2 rounded text-xs font-hud font-black tracking-widest text-white border-2 border-[#ff3344] shadow-[0_0_35px_#ff3344]">
+          <span class="text-yellow-300 text-sm">⚠ WARNING: HOMING MISSILE INCOMING</span>
+          <div class="text-[10px] font-bold text-white mt-0.5 tracking-wider">
+            DISTANCE: <span id="msl-dist-alert" class="text-yellow-300 font-black">450m</span> // DROP FLARES [F] OR PULL COBRA [Q]!
+          </div>
         </div>
 
         <div id="stall-alert" class="hidden glass-panel border border-[#ffb700] bg-[#ffb700]/20 px-4 py-1 rounded text-xs font-hud font-black text-[#ffb700]">
@@ -330,12 +333,12 @@
         <div class="text-xs font-hud font-bold text-[#00f0ff] tracking-widest mt-0.5">F-22 RAPTOR 3D COMBAT SIMULATOR</div>
         
         <p class="text-[11px] text-slate-300 my-4 leading-relaxed">
-          Pilot the world's premier 5th-generation stealth air superiority fighter. Defend the skies against Su-57 interceptors, combat drones, SAM batteries, and the massive <span class="text-[#ff0055] font-bold">STRATOS-IX Flying Fortress</span>!
+          Defend the skies against Su-57 fighters, Tu-95 Heavy Turboprop Bombers, Super Tucano strike planes, attack gunships, and aggressive <span class="text-red-400 font-bold">Enemy Homing Missiles</span>!
         </p>
 
         <div class="grid grid-cols-2 gap-2 text-[10px] text-left p-3 bg-black/40 border border-slate-800 rounded mb-4">
           <div><strong class="text-[#00f0ff]">W / S / A / D</strong> Pitch & Roll Flight</div>
-          <div><strong class="text-[#39ff14]">SPACEBAR / L-CLICK</strong> 20mm Vulcan</div>
+          <div><strong class="text-[#39ff14]">SPACE / L-CLICK</strong> 20mm Vulcan</div>
           <div><strong class="text-[#ffb700]">SHIFT / CTRL</strong> Afterburner / Brake</div>
           <div><strong class="text-[#00f0ff]">E / R-CLICK</strong> Multi-Missile Lock</div>
           <div><strong class="text-[#ff0055]">Q</strong> Pugachev's Cobra Turn</div>
@@ -369,7 +372,7 @@
       <!-- MISSION VICTORY MODAL -->
       <div id="victory-modal" class="hidden glass-panel border-2 border-[#39ff14] p-6 text-center pointer-events-auto max-w-sm w-full my-auto rounded-lg shadow-[0_0_50px_rgba(57,255,20,0.5)]">
         <div class="text-lg font-hud font-black tracking-widest text-[#39ff14]">MISSION ACCOMPLISHED!</div>
-        <div class="text-[11px] text-slate-300 mt-1">THE STRATOS-IX SUPER FORTRESS HAS BEEN DESTROYED</div>
+        <div class="text-[11px] text-slate-300 mt-1">THE ENEMY DREADNOUGHT HAS BEEN DESTROYED</div>
         
         <div class="my-4 py-3 border-t border-b border-slate-800 grid grid-cols-2 gap-2 text-xs font-hud">
           <div>TOTAL SCORE<strong id="vic-score" class="text-[#39ff14] block text-base font-black">0</strong></div>
@@ -400,7 +403,6 @@
 
       <!-- Mobile / Touch Action Deck -->
       <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-1.5 overflow-x-auto py-0.5">
-        <!-- Directional Touch Flight Stick -->
         <div class="flex items-center gap-1">
           <button class="tactical-btn px-2.5 py-1.5 text-xs"
             onmousedown="state.keys.left=true" onmouseup="state.keys.left=false" onmouseleave="state.keys.left=false"
@@ -424,7 +426,6 @@
           </button>
         </div>
 
-        <!-- Combat Touch Buttons -->
         <div class="flex items-center gap-1">
           <button class="tactical-btn red px-2.5 py-1.5 text-xs font-bold" onclick="triggerCobraManeuver()">
             [Q] COBRA
@@ -451,7 +452,6 @@
      * 1. AERODYNAMIC SIMULATION STATE & GAME MODES
      ***************************************************************************/
     const state = {
-      // 3D Aircraft State
       x: 0,
       y: 120,
       z: 0,
@@ -459,7 +459,6 @@
       vy: 0,
       vz: -320,
 
-      // Aircraft Attitude (Euler Radians)
       pitch: 0,
       roll: 0,
       yaw: 0,
@@ -467,7 +466,6 @@
       targetRoll: 0,
       targetYaw: 0,
 
-      // Flight Mechanics & Kinetic Energy
       airspeed: 320,
       mach: 1.15,
       throttle: 0.85,
@@ -475,13 +473,11 @@
       aoa: 0.0,
       altitude: 2400,
 
-      // Post-Stall & Aerobatic Maneuvers
       cobraTimer: 0,
       cobraPitch: 0,
       boostTimer: 0,
       screenShake: 0,
 
-      // Combat Inventory & Weapons
       health: 100,
       maxHealth: 100,
       ammo: 999,
@@ -497,17 +493,13 @@
       missileRecharge: 0,
       lockedTargets: [],
 
-      // Boss Battle State
       bossActive: false,
       bossHp: 1000,
       bossMaxHp: 1000,
       bossSubsystems: 4,
 
-      // Environments & Biomes: 'sunset' | 'tropical' | 'cyber'
       biome: 'sunset',
-
-      // Camera & Input Mode
-      cameraMode: 'chase', // 'chase' | 'cockpit' | 'action' | 'far'
+      cameraMode: 'chase',
       mouseAim: false,
       mouseX: 0,
       mouseY: 0,
@@ -515,6 +507,10 @@
       gameOver: false,
       gameStarted: false,
       victory: false,
+
+      // Missile Warning System
+      nearestMissileDist: 9999,
+      missileBeepTimer: 0,
 
       keys: { up: false, down: false, left: false, right: false, boost: false, brake: false, shoot: false }
     };
@@ -564,7 +560,6 @@
         engineGain.connect(audioCtx.destination);
         noise.start();
 
-        // 2. Start Dynamic 80s Arcade Combat Synthwave Music
         startArcadeMusic();
       } catch (e) {
         console.warn('Web Audio initialization note:', e);
@@ -580,7 +575,6 @@
         if (!audioEnabled || !audioCtx || state.paused || !state.gameStarted) return;
         const now = audioCtx.currentTime;
 
-        // Bass Pulse
         const bassOsc = audioCtx.createOscillator();
         const bassGain = audioCtx.createGain();
         bassOsc.type = 'sawtooth';
@@ -593,17 +587,14 @@
         bassOsc.start(now);
         bassOsc.stop(now + 0.2);
 
-        // Hi-hat noise burst on odd steps
         if (musicStep % 2 === 1) {
           playNoiseBurst(0.02, 0.04, 8000);
         }
 
-        // Snare / Clap on beats 2 and 6
         if (musicStep % 4 === 2) {
           playNoiseBurst(0.06, 0.12, 1800);
         }
 
-        // Melodic Arpeggio
         if (musicStep % 2 === 0) {
           const leadOsc = audioCtx.createOscillator();
           const leadGain = audioCtx.createGain();
@@ -671,6 +662,15 @@
         osc.start(now);
         osc.stop(now + 0.4);
         playNoiseBurst(0.3, 0.1, 400);
+      } else if (type === 'enemy_missile_siren') {
+        // High-pitch urgent warning beep
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.setValueAtTime(800, now + 0.04);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.09);
       } else if (type === 'sonic_boom') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(90, now);
@@ -721,6 +721,16 @@
       const t = state.throttle;
       engineFilter.frequency.setTargetAtTime(260 + t * 500, audioCtx.currentTime, 0.05);
       engineGain.gain.setTargetAtTime(0.05 + t * 0.1, audioCtx.currentTime, 0.05);
+
+      // Threat missile beep cadence
+      if (state.nearestMissileDist < 900) {
+        const interval = THREE.MathUtils.clamp(state.nearestMissileDist / 1800, 0.08, 0.45);
+        state.missileBeepTimer += 0.016;
+        if (state.missileBeepTimer >= interval) {
+          state.missileBeepTimer = 0;
+          playSfx('enemy_missile_siren');
+        }
+      }
     }
 
     /***************************************************************************
@@ -738,7 +748,6 @@
     renderer.toneMappingExposure = 1.35;
     container.appendChild(renderer.domElement);
 
-    // Dynamic Lighting
     const ambientLight = new THREE.AmbientLight(0xffecd0, 1.1);
     scene.add(ambientLight);
 
@@ -789,7 +798,6 @@
     }
     const skyDome = createSkyDome();
 
-    // Radiant Sun Disk
     const sunMesh = new THREE.Mesh(
       new THREE.CircleGeometry(180, 32),
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.98 })
@@ -803,6 +811,111 @@
       new THREE.MeshBasicMaterial({ color: 0xffaa33, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending })
     );
     sunMesh.add(sunGlow);
+
+    /***************************************************************************
+     * PROCEDURAL PROPELLER SPRITES & DISCS GENERATOR
+     ***************************************************************************/
+    function createPropellerBlurTexture(bladeCount = 4) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const cx = 128, cy = 128, r = 118;
+
+      // Radial blur glow
+      const grad = ctx.createRadialGradient(cx, cy, 18, cx, cy, r);
+      grad.addColorStop(0, 'rgba(20, 25, 35, 0.1)');
+      grad.addColorStop(0.65, 'rgba(35, 45, 55, 0.35)');
+      grad.addColorStop(0.85, 'rgba(255, 200, 0, 0.65)'); // Yellow tip streak
+      grad.addColorStop(1, 'rgba(255, 200, 0, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Blade motion sectors
+      for (let i = 0; i < bladeCount; i++) {
+        const angle = (i * Math.PI * 2) / bladeCount;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        ctx.fillStyle = 'rgba(15, 20, 25, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r - 6, -0.22, 0.22);
+        ctx.closePath();
+        ctx.fill();
+
+        // High-visibility yellow safety tip
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+        ctx.beginPath();
+        ctx.arc(0, 0, r - 4, -0.16, 0.16);
+        ctx.arc(0, 0, r - 22, 0.16, -0.16, true);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+    const propBlurTex4 = createPropellerBlurTexture(4);
+    const propBlurTex5 = createPropellerBlurTexture(5);
+
+    // Reusable Propeller Assembly Builder
+    function createPropellerAssembly(radius = 4.0, bladeCount = 4, spinnerColor = 0xd97706) {
+      const propGroup = new THREE.Group();
+
+      // 1. Central Spinner Nose Cone
+      const spinnerMat = new THREE.MeshStandardMaterial({ color: spinnerColor, metalness: 0.8, roughness: 0.25 });
+      const spinner = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.28, radius * 0.7, 12), spinnerMat);
+      spinner.rotation.x = Math.PI / 2;
+      propGroup.add(spinner);
+
+      // 2. 3D Blade Physical Geometry
+      const bladesGroup = new THREE.Group();
+      const bladeMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
+      const tipMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.3, roughness: 0.4 });
+
+      for (let i = 0; i < bladeCount; i++) {
+        const bladeArm = new THREE.Group();
+        bladeArm.rotation.z = (i * Math.PI * 2) / bladeCount;
+
+        // Dark aerofoil blade body
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.14, radius * 0.85, 0.08), bladeMat);
+        blade.position.y = radius * 0.45;
+        blade.rotation.x = 0.25; // Blade pitch angle
+        bladeArm.add(blade);
+
+        // Yellow safety tip
+        const tip = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.145, radius * 0.2, 0.085), tipMat);
+        tip.position.y = radius * 0.88;
+        tip.rotation.x = 0.25;
+        bladeArm.add(tip);
+
+        bladesGroup.add(bladeArm);
+      }
+      propGroup.add(bladesGroup);
+
+      // 3. Motion-Blurred Propeller Disc Sprite
+      const discMat = new THREE.MeshBasicMaterial({
+        map: bladeCount === 5 ? propBlurTex5 : propBlurTex4,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const disc = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2.1, radius * 2.1), discMat);
+      disc.position.z = 0.05;
+      propGroup.add(disc);
+
+      propGroup.userData = { bladesGroup, disc, spinSpeed: 38.0 };
+      return propGroup;
+    }
 
     /***************************************************************************
      * PROCEDURAL DETAILED F-22 RAPTOR AIRFRAME
@@ -850,10 +963,8 @@
     let leftElevon, rightElevon, leftVectorPaddle, rightVectorPaddle;
     let abLeftCore, abRightCore, abLeftFlame, abRightFlame;
     let vaporRingMesh;
-    const wingtipTrails = [];
 
     function buildDetailedF22() {
-      // 1. Sleek Stealth Radome / Nose Chine
       const noseShape = new THREE.ConeGeometry(1.6, 7.5, 4);
       noseShape.rotateY(Math.PI / 4);
       noseShape.rotateX(-Math.PI / 2);
@@ -863,20 +974,17 @@
       addEdgeHighlight(nose);
       f22Model.add(nose);
 
-      // Pitot boom needle
       const needle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 1.4, 6), mats.f22Dark);
       needle.rotation.x = Math.PI / 2;
       needle.position.set(0, 0, 11.8);
       f22Model.add(needle);
 
-      // 2. Chiseled Fuselage with Blended Chine Shoulders
       const fuseGeo = new THREE.BoxGeometry(3.6, 1.3, 10.5);
       const fuse = new THREE.Mesh(fuseGeo, mats.f22Body);
       fuse.position.set(0, 0.1, 0.5);
       addEdgeHighlight(fuse);
       f22Model.add(fuse);
 
-      // Air Intake Nacelles
       [-1, 1].forEach(side => {
         const intakeGeo = new THREE.BoxGeometry(1.4, 1.2, 5.0);
         const intake = new THREE.Mesh(intakeGeo, mats.f22Dark);
@@ -886,14 +994,12 @@
         f22Model.add(intake);
       });
 
-      // 3. Golden Stealth Canopy & Detailed Pilot Cockpit
       const canopyGeo = new THREE.SphereGeometry(1.05, 16, 12);
       canopyGeo.scale(1.0, 0.85, 3.4);
       const canopy = new THREE.Mesh(canopyGeo, mats.canopy);
       canopy.position.set(0, 0.9, 4.2);
       f22Model.add(canopy);
 
-      // Pilot silhouette
       const pilotHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), mats.pilot);
       pilotHead.position.set(0, 0.95, 3.8);
       const visor = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 0.25), mats.helmetVisor);
@@ -901,7 +1007,6 @@
       f22Model.add(pilotHead);
       f22Model.add(visor);
 
-      // HUD Combiner Glass
       const hudGlass = new THREE.Mesh(
         new THREE.PlaneGeometry(0.4, 0.35),
         new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
@@ -909,7 +1014,6 @@
       hudGlass.position.set(0, 0.95, 4.8);
       f22Model.add(hudGlass);
 
-      // 4. Cropped Diamond Wings
       const wingShape = new THREE.Shape();
       wingShape.moveTo(1.8, 4.0);
       wingShape.lineTo(8.2, -1.8);
@@ -929,7 +1033,6 @@
       lWing.scale.x = -1;
       f22Model.add(lWing);
 
-      // Wingtip Missile Rails & AIM-9X Sidewinders
       [-8.2, 8.2].forEach(x => {
         const rail = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 2.8), mats.f22Dark);
         rail.position.set(x, 0.1, -2.8);
@@ -941,7 +1044,6 @@
         f22Model.add(msl);
       });
 
-      // 5. Twin Canted Vertical Stabilizers (28-degree outward cant)
       const finShape = new THREE.Shape();
       finShape.moveTo(0, 0);
       finShape.lineTo(-1.8, 3.8);
@@ -961,7 +1063,6 @@
         f22Model.add(finGroup);
       });
 
-      // 6. All-Moving Horizontal Tailerons
       const tailGeo = new THREE.BoxGeometry(2.6, 0.12, 3.4);
       tailGeo.translate(1.4, 0, -1.2);
 
@@ -976,7 +1077,6 @@
       addEdgeHighlight(leftElevon);
       f22Model.add(leftElevon);
 
-      // 7. Twin 2D Thrust-Vectoring Nozzles & Plumes
       function createVectorNozzle(xPos) {
         const nozzleGroup = new THREE.Group();
         nozzleGroup.position.set(xPos, 0.05, -5.2);
@@ -1018,7 +1118,6 @@
       abLeftFlame = nL.flame;
       abRightFlame = nR.flame;
 
-      // 8. Sonic Boom Condensation Vapor Disc
       const vaporGeo = new THREE.TorusGeometry(4.2, 0.45, 8, 24);
       vaporRingMesh = new THREE.Mesh(
         vaporGeo,
@@ -1035,7 +1134,6 @@
     const terrainGroup = new THREE.Group();
     scene.add(terrainGroup);
 
-    // Ocean / Ground plane with animated wave reflections
     const waterGeo = new THREE.PlaneGeometry(16000, 16000, 32, 32);
     waterGeo.rotateX(-Math.PI / 2);
     const waterMat = new THREE.MeshStandardMaterial({
@@ -1045,7 +1143,6 @@
     waterPlane.position.set(0, 0, 0);
     terrainGroup.add(waterPlane);
 
-    // Mountain canyon chunks
     const mountainChunks = [];
     const mountainMat = new THREE.MeshStandardMaterial({
       color: 0x9b4d2b, roughness: 0.85, metalness: 0.1, flatShading: true
@@ -1070,7 +1167,6 @@
       spawnMountain(xRight, z, 1.2);
     }
 
-    // Volumetric 3D Low-Poly Clouds
     const clouds = [];
     const cloudMat = new THREE.MeshStandardMaterial({
       color: 0xffffff, roughness: 0.95, transparent: true, opacity: 0.85, flatShading: true
@@ -1094,7 +1190,6 @@
       spawnCloud((Math.random() - 0.5) * 1200, 180 + Math.random() * 140, -i * 240);
     }
 
-    // Aircraft Carrier
     const carrierGroup = new THREE.Group();
     function buildAircraftCarrier() {
       const hullGeo = new THREE.BoxGeometry(38, 14, 220);
@@ -1126,7 +1221,7 @@
     buildAircraftCarrier();
 
     /***************************************************************************
-     * 5. ENEMY CRAFT MODELS & COMBAT OBJECTS
+     * 5. ENEMY MODELS: PROPELLERS, BOMBERS, FIGHTERS & HOMING MISSILES
      ***************************************************************************/
     const enemies = [];
     const samBatteries = [];
@@ -1144,10 +1239,13 @@
       droneBody: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.9, flatShading: true }),
       droneGlow: new THREE.MeshBasicMaterial({ color: 0xff0055 }),
       heliCamo: new THREE.MeshStandardMaterial({ color: 0x3f4f3c, roughness: 0.8, flatShading: true }),
+      tucanoCamo: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.5, metalness: 0.4, flatShading: true }),
+      tu95Body: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4, metalness: 0.6, flatShading: true }),
       bossArmour: new THREE.MeshStandardMaterial({ color: 0x170b1c, roughness: 0.3, metalness: 0.9, flatShading: true }),
       bossGlow: new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending })
     };
 
+    // 1. Su-57 Felon Fighter
     function createSu57Model() {
       const g = new THREE.Group();
       g.scale.set(1.3, 1.3, 1.3);
@@ -1184,22 +1282,138 @@
       return g;
     }
 
-    function createDroneModel() {
+    // 2. A-29 Super Tucano Turboprop Strike Fighter
+    function createTucanoModel() {
       const g = new THREE.Group();
-      g.scale.set(1.3, 1.3, 1.3);
-      const wingGeo = new THREE.ConeGeometry(6.5, 5.0, 4);
-      wingGeo.rotateY(Math.PI / 4);
-      wingGeo.scale(1.0, 0.2, 1.0);
-      const wing = new THREE.Mesh(wingGeo, enemyMats.droneBody);
+      g.scale.set(1.25, 1.25, 1.25);
+
+      // Streamlined fuselage
+      const fuse = new THREE.Mesh(new THREE.ConeGeometry(1.3, 8.2, 8), enemyMats.tucanoCamo);
+      fuse.rotation.x = -Math.PI / 2;
+      fuse.scale.set(1.0, 1.2, 1.0);
+      g.add(fuse);
+
+      // Low wings with dihedral
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.15, 2.4), enemyMats.tucanoCamo);
+      wing.position.set(0, -0.3, -0.2);
       g.add(wing);
 
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), enemyMats.droneGlow);
-      eye.position.set(0, 0.15, 2.4);
-      g.add(eye);
-      addEdgeHighlight(wing, 0xff0055);
+      // Bubble canopy
+      const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 8), mats.canopy);
+      canopy.scale.set(0.8, 0.7, 2.2);
+      canopy.position.set(0, 0.65, 0.6);
+      g.add(canopy);
+
+      // Single tall vertical fin
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.2, 1.8), enemyMats.tucanoCamo);
+      fin.position.set(0, 1.1, -3.4);
+      g.add(fin);
+
+      // Nose Propeller Assembly
+      const noseProp = createPropellerAssembly(2.8, 5, 0xd97706);
+      noseProp.position.set(0, 0, 4.2);
+      g.add(noseProp);
+
+      g.userData.props = [noseProp];
+      addEdgeHighlight(fuse, 0xf59e0b);
       return g;
     }
 
+    // 3. Tu-95 "Sky Titan" Quad-Turboprop Heavy Strategic Bomber
+    function createTu95BomberModel() {
+      const g = new THREE.Group();
+      g.scale.set(1.6, 1.6, 1.6);
+
+      // Giant fuselage
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 18, 12), enemyMats.tu95Body);
+      body.rotation.x = Math.PI / 2;
+      g.add(body);
+
+      // Swept Wings (35-degree sweep)
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(32.0, 0.35, 4.2), enemyMats.tu95Body);
+      wing.position.set(0, 0.4, 1.5);
+      g.add(wing);
+
+      // Tail surfaces
+      const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4.5, 3.2), enemyMats.tu95Body);
+      tailFin.position.set(0, 2.4, -7.5);
+      g.add(tailFin);
+
+      const tailHoriz = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.2, 2.0), enemyMats.tu95Body);
+      tailHoriz.position.set(0, 0.8, -7.8);
+      g.add(tailHoriz);
+
+      // 4 Turboprop Nacelles with Dual Counter-Rotating Propellers!
+      const props = [];
+      [-11, -5.5, 5.5, 11].forEach(x => {
+        const nacelle = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.95, 6.5, 10), enemyMats.su57Dark);
+        nacelle.rotation.x = Math.PI / 2;
+        nacelle.position.set(x, -0.2, 1.8);
+        g.add(nacelle);
+
+        // Front prop
+        const prop1 = createPropellerAssembly(3.2, 4, 0xf59e0b);
+        prop1.position.set(x, -0.2, 5.2);
+        g.add(prop1);
+
+        // Counter-rotating rear prop
+        const prop2 = createPropellerAssembly(3.0, 4, 0xd97706);
+        prop2.position.set(x, -0.2, 4.5);
+        prop2.userData.spinSpeed = -38.0;
+        g.add(prop2);
+
+        props.push(prop1, prop2);
+      });
+
+      // Rear Stinger Defensive Turret
+      const turret = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 8), enemyMats.su57Dark);
+      turret.position.set(0, 0.2, -9.2);
+      const gunBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.0, 6), mats.nozzleMetal);
+      gunBarrel.rotation.x = Math.PI / 2;
+      gunBarrel.position.set(0, 0, -1.0);
+      turret.add(gunBarrel);
+      g.add(turret);
+
+      g.userData.props = props;
+      addEdgeHighlight(body, 0x38bdf8);
+      return g;
+    }
+
+    // 4. MQ-9 Turboprop UCAV Drone
+    function createReaperDroneModel() {
+      const g = new THREE.Group();
+      g.scale.set(1.2, 1.2, 1.2);
+
+      const fuse = new THREE.Mesh(new THREE.ConeGeometry(1.1, 7.5, 8), enemyMats.droneBody);
+      fuse.rotation.x = -Math.PI / 2;
+      fuse.scale.set(1.0, 1.3, 1.0);
+      g.add(fuse);
+
+      // Long glider wings
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(16.0, 0.12, 1.5), enemyMats.droneBody);
+      wing.position.set(0, 0.2, 0.5);
+      g.add(wing);
+
+      // Inverted V-tail
+      [-1, 1].forEach(side => {
+        const vFin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 1.2), enemyMats.droneBody);
+        vFin.position.set(side * 0.9, -0.6, -3.2);
+        vFin.rotation.z = side * 0.5;
+        g.add(vFin);
+      });
+
+      // Rear Pusher Propeller
+      const pusherProp = createPropellerAssembly(2.4, 3, 0xfacc15);
+      pusherProp.position.set(0, 0, -3.8);
+      pusherProp.rotation.y = Math.PI;
+      g.add(pusherProp);
+
+      g.userData.props = [pusherProp];
+      addEdgeHighlight(fuse, 0xff0055);
+      return g;
+    }
+
+    // 5. Ka-52 Gunship
     function createHeliModel() {
       const g = new THREE.Group();
       g.scale.set(1.2, 1.2, 1.2);
@@ -1210,16 +1424,23 @@
       tail.position.set(0, 0.2, -6.5);
       g.add(tail);
 
-      const rotor = new THREE.Mesh(
-        new THREE.CylinderGeometry(6.8, 6.8, 0.05, 16),
-        new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.4 })
-      );
-      rotor.position.set(0, 1.8, 0.5);
-      g.add(rotor);
-      g.userData.rotor = rotor;
+      // Coaxial Dual Rotor Assemblies
+      const rotor1 = createPropellerAssembly(6.8, 4, 0x1e293b);
+      rotor1.rotation.x = Math.PI / 2;
+      rotor1.position.set(0, 2.0, 0.5);
+      g.add(rotor1);
+
+      const rotor2 = createPropellerAssembly(6.5, 4, 0x1e293b);
+      rotor2.rotation.x = Math.PI / 2;
+      rotor2.position.set(0, 2.7, 0.5);
+      rotor2.userData.spinSpeed = -38.0;
+      g.add(rotor2);
+
+      g.userData.props = [rotor1, rotor2];
       return g;
     }
 
+    // 6. Mobile Ground SAM Missile Battery
     function createSamModel() {
       const g = new THREE.Group();
       const chassis = new THREE.Mesh(new THREE.BoxGeometry(8, 3.5, 12), enemyMats.heliCamo);
@@ -1248,6 +1469,7 @@
       return g;
     }
 
+    // 7. Boss Fortress
     let bossObject = null;
     function spawnBossFortress(zPos) {
       const g = new THREE.Group();
@@ -1294,6 +1516,62 @@
     }
 
     /***************************************************************************
+     * ADVANCED ENEMY HOMING MISSILE SPAWNER (WITH PROPORTIONAL GUIDANCE & SMOKE)
+     ***************************************************************************/
+    function spawnAdvancedEnemyHomingMissile(sx, sy, sz, sourceLabel = 'BANDIT') {
+      const g = new THREE.Group();
+
+      // Missile Body
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.35, 4.5, 8), mats.f22Dark);
+      body.rotation.x = Math.PI / 2;
+      g.add(body);
+
+      // Radome seeker nose
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.2, 8), new THREE.MeshBasicMaterial({ color: 0xff3344 }));
+      nose.rotation.x = Math.PI / 2;
+      nose.position.z = 2.8;
+      g.add(nose);
+
+      // 4 Steering guidance fins
+      for (let i = 0; i < 4; i++) {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.5, 0.7), mats.f22Dark);
+        fin.rotation.z = (i * Math.PI) / 2;
+        fin.position.z = -1.6;
+        g.add(fin);
+      }
+
+      // Burning rocket motor exhaust
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 3.5, 8), mats.abFire);
+      flame.rotation.x = -Math.PI / 2;
+      flame.position.z = -3.8;
+      g.add(flame);
+
+      g.position.set(sx, sy, sz);
+      scene.add(g);
+
+      const dx = state.x - sx, dy = state.y - sy, dz = state.z - sz;
+      const dist = Math.hypot(dx, dy, dz) || 1;
+      const initialSpd = 310;
+
+      enemyMissiles.push({
+        mesh: g,
+        x: sx, y: sy, z: sz,
+        vx: (dx / dist) * initialSpd,
+        vy: (dy / dist) * initialSpd,
+        vz: (dz / dist) * initialSpd,
+        speed: initialSpd,
+        maxSpeed: 540, // Accelerates rapidly!
+        life: 5.5,
+        smokeTimer: 0,
+        spoofed: false,
+        source: sourceLabel
+      });
+
+      playSfx('enemy_missile_siren');
+      sendRadio(`⚠ THREAT DETECTED! ${sourceLabel} LAUNCHED HOMING MISSILE!`);
+    }
+
+    /***************************************************************************
      * WAVE GENERATOR & MISSION PROGRESSION
      ***************************************************************************/
     function spawnWave(startZ) {
@@ -1302,55 +1580,87 @@
 
       if (w % 4 === 0) {
         spawnBossFortress(startZ - 900);
-        for (let i = 0; i < 4; i++) {
-          spawnEnemy((i % 2 === 0 ? -1 : 1) * 80, 140 + i * 20, startZ - 600 - i * 150, 'su57');
+        for (let i = 0; i < 3; i++) {
+          spawnEnemy((i % 2 === 0 ? -1 : 1) * 80, 140 + i * 20, startZ - 600 - i * 150, 'tucano');
         }
         return;
       }
 
-      const suCount = 2 + Math.min(6, w * 2);
-      for (let i = 0; i < suCount; i++) {
-        const type = (i % 3 === 0 ? 'drone' : (i % 3 === 1 ? 'su57' : 'heli'));
-        spawnEnemy(
-          (Math.random() - 0.5) * 260,
-          40 + Math.random() * 110,
-          startZ - 600 - i * 240,
-          type
-        );
-      }
-
-      for (let i = 0; i < 2 + Math.min(3, w); i++) {
-        spawnSamTurret((Math.random() - 0.5) * 200, startZ - 800 - i * 450);
+      // Spawn a rich variety of Propeller & Jet Hostiles
+      if (w === 1) {
+        // Stage 1: Recon & Turboprop Strike
+        spawnEnemy(-60, 90, startZ - 500, 'tucano');
+        spawnEnemy(60, 110, startZ - 650, 'reaper');
+        spawnEnemy(0, 130, startZ - 800, 'su57');
+        spawnEnemy(-80, 70, startZ - 950, 'heli');
+      } else if (w === 2) {
+        // Stage 2: Turboprop Interceptors & SAM Batteries
+        spawnEnemy(-70, 100, startZ - 500, 'tucano');
+        spawnEnemy(70, 90, startZ - 650, 'tucano');
+        spawnEnemy(0, 140, startZ - 800, 'su57');
+        spawnEnemy(-50, 120, startZ - 950, 'reaper');
+        spawnSamTurret(-90, startZ - 750);
+        spawnSamTurret(90, startZ - 1050);
+      } else if (w === 3) {
+        // Stage 3: The Colossal Tu-95 Heavy Turboprop Bomber
+        spawnEnemy(0, 150, startZ - 850, 'tu95');
+        spawnEnemy(-90, 120, startZ - 650, 'tucano');
+        spawnEnemy(90, 120, startZ - 650, 'tucano');
+        spawnEnemy(0, 80, startZ - 1100, 'heli');
+        spawnSamTurret(0, startZ - 900);
+      } else {
+        // Endless Dynamic Squadron
+        const types = ['tucano', 'reaper', 'tu95', 'su57', 'heli'];
+        const count = 3 + Math.min(5, w);
+        for (let i = 0; i < count; i++) {
+          const type = types[i % types.length];
+          spawnEnemy(
+            (Math.random() - 0.5) * 260,
+            50 + Math.random() * 110,
+            startZ - 600 - i * 240,
+            type
+          );
+        }
+        spawnSamTurret((Math.random() - 0.5) * 200, startZ - 800);
       }
 
       for (let i = 0; i < 4; i++) {
         spawnRing((Math.random() - 0.5) * 160, 60 + Math.random() * 80, startZ - 500 - i * 400);
       }
-
-      const messages = [
-        "Hostile radar contacts bearing 0-2-0. Intercept and destroy.",
-        "Bandits sighted over the canyon ridge. Fox-Two authorized.",
-        "Low-level strike group detected. Watch out for SAM locks!",
-        "Heavy air battle in progress. Use afterburners and cobra maneuver!"
-      ];
-      sendRadio(messages[(w - 1) % messages.length]);
     }
 
     function spawnEnemy(x, y, z, type = 'su57') {
       let mesh;
-      if (type === 'su57') mesh = createSu57Model();
-      else if (type === 'drone') mesh = createDroneModel();
-      else mesh = createHeliModel();
+      let hp = 1;
+      let label = 'BANDIT';
+
+      if (type === 'tucano') {
+        mesh = createTucanoModel();
+        hp = 2; label = 'A-29 TUCANO';
+      } else if (type === 'tu95') {
+        mesh = createTu95BomberModel();
+        hp = 8; label = 'TU-95 BOMBER';
+      } else if (type === 'reaper') {
+        mesh = createReaperDroneModel();
+        hp = 2; label = 'REAPER DRONE';
+      } else if (type === 'heli') {
+        mesh = createHeliModel();
+        hp = 2; label = 'GUNSHIP';
+      } else {
+        mesh = createSu57Model();
+        hp = 3; label = 'SU-57 FELON';
+      }
 
       mesh.position.set(x, y, z);
       scene.add(mesh);
 
       enemies.push({
         mesh, type, x, y, z, baseX: x, baseY: y,
-        vz: 140 + Math.random() * 40 + state.wave * 8,
+        vz: 130 + Math.random() * 35 + state.wave * 7,
         phase: Math.random() * Math.PI * 2,
-        fireTimer: 1.8 + Math.random() * 2.0,
-        hp: type === 'su57' ? 2 : 1
+        fireTimer: 2.2 + Math.random() * 2.0,
+        turretTimer: 0.6,
+        hp, label
       });
     }
 
@@ -1358,7 +1668,7 @@
       const mesh = createSamModel();
       mesh.position.set(x, 0, z);
       scene.add(mesh);
-      samBatteries.push({ mesh, x, y: 0, z, fireTimer: 2.2 + Math.random() * 2.0, hp: 3 });
+      samBatteries.push({ mesh, x, y: 0, z, fireTimer: 2.5 + Math.random() * 2.0, hp: 3, label: 'SAM SITE' });
     }
 
     function spawnRing(x, y, z) {
@@ -1433,7 +1743,7 @@
 
       for (let i = 0; i < 6; i++) {
         const m = new THREE.Mesh(
-          new THREE.SphereGeometry(0.8, 6, 6),
+          new THREE.SphereGeometry(0.85, 6, 6),
           new THREE.MeshBasicMaterial({ color: 0xffaa00 })
         );
         m.position.set(state.x, state.y, state.z + 4);
@@ -1453,8 +1763,8 @@
       });
       if (spoofCount > 0) {
         state.score += spoofCount * 300;
-        addPopup(`MISSILE DEFLECTED! +${spoofCount * 300}`, state.x, state.y + 8, state.z - 20, '#ffb700');
-        sendRadio("Flares deployed! Threat missile lost lock.");
+        addPopup(`HOMING MISSILE SPOOFED! +${spoofCount * 300}`, state.x, state.y + 8, state.z - 20, '#ffb700');
+        sendRadio("Flares seduced enemy seeker! Threat defeated!");
       }
     }
 
@@ -1520,7 +1830,6 @@
     function stepFlightPhysics(dt) {
       if (state.paused || state.gameOver || !state.gameStarted) return;
 
-      // 1. Throttle, Afterburner & Airbrake
       if (state.keys.boost || state.boostTimer > 0) {
         if (state.boostTimer > 0) state.boostTimer -= dt;
         state.throttle = Math.min(1.5, state.throttle + 1.4 * dt);
@@ -1530,7 +1839,6 @@
         state.throttle += (0.85 - state.throttle) * Math.min(1, 2.5 * dt);
       }
 
-      // 2. Kinetic Energy & Airspeed Calculation
       const altitudeEffect = (state.vy < 0) ? Math.abs(state.vy) * 0.4 : -state.vy * 0.3;
       state.airspeed = THREE.MathUtils.clamp(
         220 + state.throttle * 220 + altitudeEffect,
@@ -1539,7 +1847,6 @@
       state.mach = Number((state.airspeed / 320).toFixed(2));
       state.altitude = Math.round(state.y * 22);
 
-      // Sonic Boom Singularity Effect on Mach 1.0+
       if (state.mach >= 1.0 && vaporRingMesh.material.opacity < 0.8) {
         playSfx('sonic_boom');
         state.screenShake = Math.max(state.screenShake, 1.1);
@@ -1547,7 +1854,6 @@
       }
       vaporRingMesh.material.opacity = Math.max(0, vaporRingMesh.material.opacity - 2.5 * dt);
 
-      // 3. Flight Control Inputs (Mouse or Keyboard)
       let inputX = 0, inputY = 0;
       if (state.mouseAim) {
         inputX = THREE.MathUtils.clamp(state.mouseX * 1.6, -1, 1);
@@ -1559,7 +1865,6 @@
         if (state.keys.down) inputY -= 1;
       }
 
-      // Cobra Maneuver Pitch Override
       if (state.cobraTimer > 0) {
         state.cobraTimer -= dt;
         const progress = 1.0 - (state.cobraTimer / 0.85);
@@ -1600,7 +1905,6 @@
 
       state.gLoad = Number((1.0 + Math.abs(inputY) * 6.5 + Math.abs(inputX) * 3.0).toFixed(1));
 
-      // High-G Vignette darkening
       const vig = document.getElementById('vignette-overlay');
       if (state.gLoad > 5.0) {
         vig.style.boxShadow = `inset 0 0 ${120 + (state.gLoad - 5) * 60}px rgba(0,0,0,0.92)`;
@@ -1608,7 +1912,6 @@
         vig.style.boxShadow = 'inset 0 0 120px rgba(0,0,0,0.65)';
       }
 
-      // Weapons firing & cooldowns
       if (state.shootCooldown > 0) state.shootCooldown -= dt;
       if (state.keys.shoot && state.shootCooldown <= 0) {
         fireVulcanCannon();
@@ -1621,7 +1924,6 @@
         if (state.missiles < state.maxMissiles) state.missiles++;
       }
 
-      // Multi-target Radar Lock Scanning
       state.lockedTargets = [];
       const allHostiles = [...enemies, ...samBatteries];
       if (bossObject) allHostiles.push(bossObject);
@@ -1668,7 +1970,6 @@
       f22RollGroup.rotation.z = state.roll;
       f22Root.visible = state.cameraMode !== 'cockpit';
 
-      // Control Surface Deflections
       const elDef = -state.pitch * 0.9;
       const ailDef = state.roll * 0.6;
       leftElevon.rotation.x = elDef - ailDef;
@@ -1676,12 +1977,11 @@
       leftVectorPaddle.rotation.x = elDef;
       rightVectorPaddle.rotation.x = elDef;
 
-      // Afterburner Flames
       const abIntensity = THREE.MathUtils.clamp((state.throttle - 0.7) * 2.2, 0.4, 1.6);
       abLeftFlame.scale.set(abIntensity, abIntensity, abIntensity * (1 + Math.random() * 0.2));
       abRightFlame.scale.set(abIntensity, abIntensity, abIntensity * (1 + Math.random() * 0.2));
 
-      // Wingtip Condensation Vapor Trails during high-G turns!
+      // Wingtip Condensation Vapor Trails
       if (state.gLoad > 3.0 || state.cobraTimer > 0) {
         [-8.2, 8.2].forEach(ox => {
           const vMesh = new THREE.Mesh(
@@ -1699,7 +1999,7 @@
         });
       }
 
-      // Scroll Terrain & Mountains
+      // Terrain scrolling
       waterPlane.position.z = state.z - 2000;
       sunMesh.position.z = state.z - 3600;
 
@@ -1719,13 +2019,13 @@
 
         for (let j = enemies.length - 1; j >= 0; j--) {
           const e = enemies[j];
-          if (Math.hypot(b.x - e.x, b.y - e.y, b.z - e.z) < 18) {
+          if (Math.hypot(b.x - e.x, b.y - e.y, b.z - e.z) < 22) {
             e.hp--;
             if (e.hp <= 0) {
-              spawnExplosion(e.x, e.y, e.z, 30, 0xffaa00);
+              spawnExplosion(e.x, e.y, e.z, 35, 0xffaa00);
               scene.remove(e.mesh);
               enemies.splice(j, 1);
-              registerKill('BANDIT DESTROYED', 350, e.x, e.y, e.z);
+              registerKill(`${e.label} DESTROYED`, 400, e.x, e.y, e.z);
             }
             hit = true; break;
           }
@@ -1774,11 +2074,11 @@
         let dead = m.life <= 0 || m.y <= 0;
         for (let j = enemies.length - 1; j >= 0; j--) {
           const e = enemies[j];
-          if (Math.hypot(m.x - e.x, m.y - e.y, m.z - e.z) < 22) {
-            spawnExplosion(e.x, e.y, e.z, 40, 0x00f0ff);
+          if (Math.hypot(m.x - e.x, m.y - e.y, m.z - e.z) < 26) {
+            spawnExplosion(e.x, e.y, e.z, 45, 0x00f0ff);
             scene.remove(e.mesh);
             enemies.splice(j, 1);
-            registerKill('FOX-2 SPLASH!', 500, e.x, e.y, e.z);
+            registerKill(`FOX-2 ON ${e.label}!`, 550, e.x, e.y, e.z);
             dead = true; break;
           }
         }
@@ -1792,8 +2092,7 @@
         if (dead) { scene.remove(m.mesh); playerMissiles.splice(i, 1); }
       }
 
-      // Enemies AI & Flight
-      let threatActive = false;
+      // Enemies AI, Animations (Propellers) & Combat
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
         e.phase += dt * 2.0;
@@ -1802,21 +2101,44 @@
         e.y = e.baseY + Math.cos(e.phase * 0.7) * 18;
         e.mesh.position.set(e.x, e.y, e.z);
 
-        if (e.mesh.userData && e.mesh.userData.rotor) {
-          e.mesh.userData.rotor.rotation.y += dt * 25;
+        // Animate all 3D Propeller Blades & Blur Discs!
+        if (e.mesh.userData && e.mesh.userData.props) {
+          e.mesh.userData.props.forEach(p => {
+            const spin = (p.userData.spinSpeed || 38.0) * dt;
+            if (p.userData.bladesGroup) p.userData.bladesGroup.rotation.z += spin;
+            if (p.userData.disc) p.userData.disc.rotation.z += spin * 0.5;
+          });
         }
 
+        // Enemy Homing Missile Launches!
         e.fireTimer -= dt;
         const dz = state.z - e.z;
-        if (e.fireTimer <= 0 && dz > 160 && dz < 850 && enemyMissiles.length < 2) {
-          e.fireTimer = 5.0;
-          spawnEnemyMissile(e.x, e.y, e.z);
+        if (e.fireTimer <= 0 && dz > 180 && dz < 900 && enemyMissiles.length < 3) {
+          e.fireTimer = (e.type === 'tu95' ? 3.5 : 5.0);
+          spawnAdvancedEnemyHomingMissile(e.x, e.y, e.z, e.label);
+        }
+
+        // Tu-95 Rear Defensive Turret Tracers
+        if (e.type === 'tu95') {
+          e.turretTimer -= dt;
+          if (e.turretTimer <= 0 && dz > 50 && dz < 550) {
+            e.turretTimer = 0.35;
+            // Fire defensive tracer back towards player
+            const bMesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 5), new THREE.MeshBasicMaterial({ color: 0xff3344 }));
+            bMesh.position.set(e.x, e.y, e.z);
+            scene.add(bMesh);
+            bullets.push({
+              mesh: bMesh, x: e.x, y: e.y, z: e.z,
+              vx: (state.x - e.x) * 0.8, vy: (state.y - e.y) * 0.8, vz: 650,
+              life: 1.2
+            });
+          }
         }
 
         if (e.z > state.z + 80) {
           e.z = state.z - 1600 - Math.random() * 400;
           e.baseX = (Math.random() - 0.5) * 220;
-          e.baseY = 40 + Math.random() * 100;
+          e.baseY = 50 + Math.random() * 100;
         }
       }
 
@@ -1828,14 +2150,14 @@
         }
         s.fireTimer -= dt;
         const dz = state.z - s.z;
-        if (s.fireTimer <= 0 && dz > 180 && dz < 900 && enemyMissiles.length < 2) {
+        if (s.fireTimer <= 0 && dz > 180 && dz < 900 && enemyMissiles.length < 3) {
           s.fireTimer = 5.5;
-          spawnEnemyMissile(s.x, s.y + 6, s.z);
+          spawnAdvancedEnemyHomingMissile(s.x, s.y + 6, s.z, 'SAM SITE');
         }
         if (s.z > state.z + 100) { scene.remove(s.mesh); samBatteries.splice(i, 1); }
       }
 
-      // Boss Dreadnought Update
+      // Boss Dreadnought
       if (bossObject) {
         bossObject.phase += dt * 0.8;
         bossObject.mesh.position.x = Math.sin(bossObject.phase) * 60;
@@ -1845,41 +2167,90 @@
 
         bossObject.fireTimer -= dt;
         if (bossObject.fireTimer <= 0) {
-          bossObject.fireTimer = 2.2;
-          spawnEnemyMissile(bossObject.x - 25, bossObject.y, bossObject.z);
-          spawnEnemyMissile(bossObject.x + 25, bossObject.y, bossObject.z);
+          bossObject.fireTimer = 2.5;
+          spawnAdvancedEnemyHomingMissile(bossObject.x - 25, bossObject.y, bossObject.z, 'TITAN');
+          spawnAdvancedEnemyHomingMissile(bossObject.x + 25, bossObject.y, bossObject.z, 'TITAN');
         }
       }
 
-      // Enemy Missiles
+      // ADVANCED HOMING ENEMY MISSILE GUIDANCE & SMOKE PARTICLES
+      let threatActive = false;
+      let closestDist = 9999;
+
       for (let i = enemyMissiles.length - 1; i >= 0; i--) {
         const em = enemyMissiles[i];
         em.life -= dt;
 
-        if (!em.spoofed && em.z < state.z) {
+        // Proportional navigation lead guidance
+        if (!em.spoofed && em.z < state.z + 30) {
           threatActive = true;
-          const dx = state.x - em.x, dy = state.y - em.y, dz = state.z - em.z;
+          // Calculate lead intercept point based on player velocity
+          const leadX = state.x + state.vx * 0.35;
+          const leadY = state.y + state.vy * 0.35;
+          const leadZ = state.z + state.vz * 0.35;
+
+          const dx = leadX - em.x;
+          const dy = leadY - em.y;
+          const dz = leadZ - em.z;
           const dist = Math.hypot(dx, dy, dz) || 1;
-          em.vx += ((dx / dist) * em.speed - em.vx) * Math.min(1, 3.8 * dt);
-          em.vy += ((dy / dist) * em.speed - em.vy) * Math.min(1, 3.8 * dt);
-          em.vz += ((dz / dist) * em.speed - em.vz) * Math.min(1, 3.8 * dt);
+
+          if (dist < closestDist) closestDist = dist;
+
+          // Accelerate rocket engine
+          em.speed = Math.min(em.maxSpeed, em.speed + 120 * dt);
+
+          // Proportional guidance turn rate (up to 4.5 rad/s)
+          const steerRate = Math.min(1, 4.5 * dt);
+          em.vx += ((dx / dist) * em.speed - em.vx) * steerRate;
+          em.vy += ((dy / dist) * em.speed - em.vy) * steerRate;
+          em.vz += ((dz / dist) * em.speed - em.vz) * steerRate;
+
+          // Align missile mesh to velocity vector
+          em.mesh.lookAt(em.x + em.vx, em.y + em.vy, em.z + em.vz);
         } else if (em.spoofed) {
-          em.vy += 80 * dt;
+          em.vy += 75 * dt; // Dive away into ground / flares
         }
 
-        em.x += em.vx * dt; em.y += em.vy * dt; em.z += em.vz * dt;
+        em.x += em.vx * dt;
+        em.y += em.vy * dt;
+        em.z += em.vz * dt;
         em.mesh.position.set(em.x, em.y, em.z);
 
-        const hit = !em.spoofed && Math.hypot(em.x - state.x, em.y - state.y, em.z - state.z) < 12;
-        if (hit) {
-          damagePlayer(35, 'MISSILE IMPACT');
-          spawnExplosion(state.x, state.y, state.z, 35, 0xff3344);
+        // Billowing Smoke Trail Particles
+        em.smokeTimer += dt;
+        if (em.smokeTimer >= 0.035) {
+          em.smokeTimer = 0;
+          const sMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5 + Math.random() * 0.4, 4, 4),
+            new THREE.MeshBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.65 })
+          );
+          sMesh.position.set(em.x, em.y, em.z);
+          scene.add(sMesh);
+          particles.push({
+            mesh: sMesh, x: em.x, y: em.y, z: em.z,
+            vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, vz: 10,
+            life: 0.65, maxLife: 0.65
+          });
         }
-        if (hit || em.life <= 0 || em.z > state.z + 60 || em.y <= 0) {
-          scene.remove(em.mesh); enemyMissiles.splice(i, 1);
+
+        // Proximity Detonation Hit Check
+        const hit = !em.spoofed && Math.hypot(em.x - state.x, em.y - state.y, em.z - state.z) < 14;
+        if (hit) {
+          damagePlayer(35, `HIT BY ${em.source} HOMING MISSILE`);
+          spawnExplosion(state.x, state.y, state.z, 40, 0xff3344);
+        }
+
+        if (hit || em.life <= 0 || em.z > state.z + 80 || em.y <= 0) {
+          scene.remove(em.mesh);
+          enemyMissiles.splice(i, 1);
         }
       }
+
+      state.nearestMissileDist = closestDist;
       document.getElementById('missile-alert').classList.toggle('hidden', !threatActive);
+      if (threatActive) {
+        document.getElementById('msl-dist-alert').textContent = `${Math.round(closestDist)}m`;
+      }
 
       // Floating Boost Rings
       for (let i = floatingRings.length - 1; i >= 0; i--) {
@@ -1924,7 +2295,7 @@
         const p = particles[i];
         p.life -= dt;
         if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); continue; }
-        p.vy -= 22 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        p.vy -= 20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
         p.mesh.position.set(p.x, p.y, p.z);
         p.mesh.material.opacity = p.life / p.maxLife;
       }
@@ -1934,23 +2305,6 @@
         combatPopups[i].y += 12 * dt;
         if (combatPopups[i].life <= 0) combatPopups.splice(i, 1);
       }
-    }
-
-    function spawnEnemyMissile(sx, sy, sz) {
-      const mesh = new THREE.Mesh(new THREE.ConeGeometry(0.55, 4.5, 6), mats.abFire);
-      mesh.rotation.x = Math.PI / 2;
-      mesh.position.set(sx, sy, sz);
-      scene.add(mesh);
-
-      const dx = state.x - sx, dy = state.y - sy, dz = state.z - sz;
-      const dist = Math.hypot(dx, dy, dz) || 1;
-      const spd = 340;
-      enemyMissiles.push({
-        mesh, x: sx, y: sy, z: sz,
-        vx: (dx / dist) * spd, vy: (dy / dist) * spd, vz: (dz / dist) * spd,
-        speed: spd, life: 4.5, spoofed: false
-      });
-      playSfx('lock_tone');
     }
 
     function registerKill(label, pts, x, y, z) {
@@ -1992,13 +2346,11 @@
     const camTarget = new THREE.Vector3(0, 122, -120);
 
     function updateCamera(dt) {
-      // Screen Shake damping
       const shakeX = (Math.random() - 0.5) * state.screenShake * 1.5;
       const shakeY = (Math.random() - 0.5) * state.screenShake * 1.5;
       state.screenShake = Math.max(0, state.screenShake - 3.5 * dt);
 
       if (state.cameraMode === 'chase') {
-        // Heroic close-range Chase Cam
         const distBack = 18 + (state.mach - 1.0) * 8;
         const targetPos = new THREE.Vector3(
           state.x - Math.sin(state.yaw) * 4 + shakeX,
@@ -2086,7 +2438,7 @@
       ctx.moveTo(leadX + 18, leadY); ctx.lineTo(leadX + 25, leadY);
       ctx.stroke();
 
-      // 3. Enemy Target Brackets & Multi-Locks
+      // 3. Enemy Target Brackets with Specific Aircraft Designations
       enemies.forEach(e => {
         const scr = toScreen(e.x, e.y, e.z);
         if (scr.visible && scr.x > 0 && scr.x < hudCanvas.width && scr.y > 0 && scr.y < hudCanvas.height) {
@@ -2095,10 +2447,10 @@
 
           ctx.strokeStyle = locked ? '#00f0ff' : '#ff3344';
           ctx.lineWidth = locked ? 2.2 : 1.2;
-          ctx.strokeRect(scr.x - 16, scr.y - 16, 32, 32);
+          ctx.strokeRect(scr.x - 18, scr.y - 18, 36, 36);
 
           ctx.fillStyle = locked ? '#00f0ff' : '#ff3344';
-          ctx.fillText(locked ? `LOCK ${dist}m` : `BANDIT ${dist}m`, scr.x - 28, scr.y - 20);
+          ctx.fillText(locked ? `LOCK ${dist}m` : `${e.label} ${dist}m`, scr.x - 30, scr.y - 22);
         }
       });
 
@@ -2109,6 +2461,29 @@
           ctx.strokeRect(scr.x - 14, scr.y - 14, 28, 28);
           ctx.fillStyle = '#ffb700';
           ctx.fillText('SAM SITE', scr.x - 25, scr.y - 18);
+        }
+      });
+
+      // 4. Enemy Homing Missile Threat Brackets & Warning Diamond
+      enemyMissiles.forEach(em => {
+        const scr = toScreen(em.x, em.y, em.z);
+        const dist = Math.round(Math.hypot(em.x - state.x, em.y - state.y, em.z - state.z));
+        if (scr.visible) {
+          ctx.strokeStyle = '#ff0055';
+          ctx.lineWidth = 2.5;
+
+          // Flashing Threat Diamond
+          ctx.beginPath();
+          ctx.moveTo(scr.x, scr.y - 16);
+          ctx.lineTo(scr.x + 16, scr.y);
+          ctx.lineTo(scr.x, scr.y + 16);
+          ctx.lineTo(scr.x - 16, scr.y);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.fillStyle = '#ff0055';
+          ctx.font = '900 11px "Orbitron", monospace';
+          ctx.fillText(`⚠ MSL ${dist}m`, scr.x - 28, scr.y - 20);
         }
       });
 
@@ -2123,7 +2498,7 @@
         }
       }
 
-      // 4. Tactical Radar Minimap
+      // 5. Tactical Radar Minimap
       const radarSize = 110;
       const rx = hudCanvas.width - radarSize - 20;
       const ry = 80;
@@ -2141,17 +2516,33 @@
       ctx.arc(rx + radarSize / 2, ry + radarSize / 2, radarSize / 4, 0, Math.PI * 2);
       ctx.stroke();
 
+      // Player blip
       ctx.fillStyle = '#39ff14';
       ctx.fillRect(rx + radarSize / 2 - 2, ry + radarSize / 2 - 2, 4, 4);
 
+      // Enemy blips
       enemies.forEach(e => {
         const dx = (e.x - state.x) * 0.08;
         const dz = (e.z - state.z) * 0.08;
         const rbx = rx + radarSize / 2 + dx;
         const rby = ry + radarSize / 2 + dz;
         if (Math.hypot(dx, dz) < radarSize / 2 - 2) {
-          ctx.fillStyle = '#ff3344';
-          ctx.fillRect(rbx - 2, rby - 2, 4, 4);
+          ctx.fillStyle = e.type === 'tu95' ? '#ff0055' : '#ff3344';
+          ctx.fillRect(rbx - 2.5, rby - 2.5, 5, 5);
+        }
+      });
+
+      // Enemy missile blips on radar (bright pulsing amber/red)
+      enemyMissiles.forEach(em => {
+        const dx = (em.x - state.x) * 0.08;
+        const dz = (em.z - state.z) * 0.08;
+        const rbx = rx + radarSize / 2 + dx;
+        const rby = ry + radarSize / 2 + dz;
+        if (Math.hypot(dx, dz) < radarSize / 2 - 2) {
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(rbx, rby, 3, 0, Math.PI * 2);
+          ctx.fill();
         }
       });
 
